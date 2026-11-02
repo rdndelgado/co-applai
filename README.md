@@ -9,13 +9,11 @@ stack, and agent design, and [`docs/ERD.md`](docs/ERD.md) for the schema.
 
 ## Where this fits
 
-```
-onlinejobsph-mapper -> onlinejobsph-parser -> Supabase -> co-applai
-```
+![co-applai architecture](docs/architecture-diagram.svg)
 
-`onlinejobsph-mapper` fetches raw job HTML from onlinejobs.ph;
-`onlinejobsph-parser` parses it into structured rows in Supabase's `jobs`
-table. co-applai pulls those jobs, drafts an apply message against the
+`onlinejobsph-scraper`'s `mapper` service fetches raw job HTML from
+onlinejobs.ph; its `parser` service parses that HTML into structured rows in
+Supabase's `jobs` table. co-applai pulls those jobs, drafts an apply message against the
 candidate's profile (`backend/profile.yaml`, not committed), flags jobs that
 are 30+ days old or carry custom apply instructions, and runs a four-agent
 (Discovery -> Matcher -> Writer -> Critic) pipeline with human review in the
