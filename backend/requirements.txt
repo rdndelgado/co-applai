@@ -6,6 +6,5 @@ langchain-core
 langchain-deepseek
 supabase
 pyyaml
-docker
 python-decouple
 psycopg[binary]

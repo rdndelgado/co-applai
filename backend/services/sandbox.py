@@ -1,47 +1,50 @@
-import docker
-from docker.errors import ContainerError, NotFound
+import resource
+import subprocess
+import sys
+import tempfile
 
-from utils.logger import get_logger
-
-logger = get_logger(__name__)
-
-SANDBOX_IMAGE = "python:3.12-slim"
 DEFAULT_TIMEOUT_SECONDS = 10
-MEMORY_LIMIT = "128m"
+MEMORY_LIMIT_BYTES = 128 * 1024 * 1024
+
+
+def _limit_resources():
+    resource.setrlimit(resource.RLIMIT_AS, (MEMORY_LIMIT_BYTES, MEMORY_LIMIT_BYTES))
+    resource.setrlimit(resource.RLIMIT_CPU, (DEFAULT_TIMEOUT_SECONDS, DEFAULT_TIMEOUT_SECONDS))
+    resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
 
 
 def run_sandboxed(code):
-    """Runs `code` as a Python script in a locked-down, ephemeral container:
-    no network, memory-capped, killed and removed after `DEFAULT_TIMEOUT_SECONDS`
-    regardless of outcome. Returns {stdout, stderr, exit_code}.
+    """Runs `code` as a Python script in a subprocess, not a container --
+    there's no Docker socket available on this deployment target. This is a
+    deliberate MVP tradeoff, not the real isolation story; a dedicated
+    sandbox service is the right answer once this needs to be production
+    hardened. What containment we can get without Docker:
+
+    - a blank environment (no inherited API keys/DB credentials)
+    - run from an empty temp directory, not the app's own working directory
+    - memory and CPU limits, no forking (RLIMIT_NPROC=0)
+    - killed after DEFAULT_TIMEOUT_SECONDS regardless of outcome
+
+    What it does NOT give us: network isolation, or protection against a
+    process that reads/writes files under its temp cwd. Acceptable here
+    because the Matcher only ever writes small, purely computational scoring
+    scripts against JSON it's already been handed.
+
+    Returns {stdout, stderr, exit_code}.
     """
-    client = docker.from_env()
-    container = None
     try:
-        container = client.containers.run(
-            SANDBOX_IMAGE,
-            ["python3", "-c", code],
-            network_disabled=True,
-            mem_limit=MEMORY_LIMIT,
-            detach=True,
-        )
-        try:
-            result = container.wait(timeout=DEFAULT_TIMEOUT_SECONDS)
-            exit_code = result.get("StatusCode", 1)
-        except Exception:
-            container.kill()
-            return {"stdout": "", "stderr": "sandbox timed out", "exit_code": -1}
-
-        stdout = container.logs(stdout=True, stderr=False).decode(errors="replace")
-        stderr = container.logs(stdout=False, stderr=True).decode(errors="replace")
-        return {"stdout": stdout, "stderr": stderr, "exit_code": exit_code}
-
-    except ContainerError as exc:
-        logger.error("sandbox container error: %s", exc)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run(
+                [sys.executable, "-c", code],
+                capture_output=True,
+                text=True,
+                timeout=DEFAULT_TIMEOUT_SECONDS,
+                cwd=tmpdir,
+                env={},
+                preexec_fn=_limit_resources,
+            )
+        return {"stdout": result.stdout, "stderr": result.stderr, "exit_code": result.returncode}
+    except subprocess.TimeoutExpired:
+        return {"stdout": "", "stderr": "sandbox timed out", "exit_code": -1}
+    except Exception as exc:
         return {"stdout": "", "stderr": str(exc), "exit_code": -1}
-    finally:
-        if container is not None:
-            try:
-                container.remove(force=True)
-            except NotFound:
-                pass

@@ -6,7 +6,6 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ./backend/profile.yaml:/app/profile.yaml:ro
 
   frontend:
