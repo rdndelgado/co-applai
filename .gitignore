@@ -222,5 +222,6 @@ __marimo__/
 # co-applai: local secrets and generated artifacts, not for version control
 backend/profile.yaml
 backend/schema.sql
+docs/SPEC.md
 frontend/node_modules/
 frontend/dist/
