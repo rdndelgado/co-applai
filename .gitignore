@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# co-applai: local secrets and generated artifacts, not for version control
+backend/profile.yaml
+backend/schema.sql
+frontend/node_modules/
+frontend/dist/

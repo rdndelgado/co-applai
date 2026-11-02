@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+langgraph
+langgraph-checkpoint-postgres
+langchain-core
+langchain-deepseek
+supabase
+pyyaml
+docker
+python-decouple
+psycopg[binary]

@@ -1,0 +1,38 @@
+name: Your Name
+headline: Your headline / target role
+location: City, Country
+phone: "+1 555 555 5555"
+email: you@example.com
+links:
+  portfolio: https://your-portfolio.example.com
+  linkedin: https://www.linkedin.com/in/your-handle/
+  github: https://github.com/your-handle
+
+education:
+  - degree: Degree name, major/track
+    school: School name
+    location: City, Country
+
+skills:
+  tools:
+    - Skill one
+    - Skill two
+  devops:
+    - Tool one
+    - Tool two
+
+experience:
+  - role: Job title
+    company: Company name
+    location: City, Country or Remote
+    duration: Month Year - Month Year
+    highlights:
+      - Notable thing you did, with a number if you have one
+
+projects:
+  - title: Project name
+    company: Where/why you built it (employer, capstone, personal)
+    description: >
+      One or two sentences on what it does and what you built it with.
+
+tone: professional   # professional | casual | direct
